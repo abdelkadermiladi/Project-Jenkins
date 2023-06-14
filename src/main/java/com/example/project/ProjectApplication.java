@@ -24,6 +24,7 @@ public class ProjectApplication {
         System.out.println("Job name: " + response.getJobName());
         System.out.println("Build number: " + response.getBuildNumber());
         System.out.println("dateTime: " + response.getdateTime());
+        System.out.println("jobDuration: " + response.getjobDuration() + " milliseconds");
 
         //jenkinsService.triggerJobBuild("project_jenkins2");
     }

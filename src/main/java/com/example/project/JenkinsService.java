@@ -71,12 +71,17 @@ public class JenkinsService {
             Instant instant = Instant.ofEpochMilli(timestampI);
             LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
+            String jobDuration = rootNode.get("duration").asText();
+
+
+
 
             // create an instance of JenkinsJobBuild
             JenkinsJobBuild jobBuild = new JenkinsJobBuild();
             jobBuild.setJobName(jobName);
             jobBuild.setdateTime(dateTime);
             jobBuild.setBuildNumber(buildNumber);
+            jobBuild.setjobDuration(jobDuration);
 
             return jobBuild;
 

@@ -7,6 +7,8 @@ public class JenkinsJobBuild {
     private LocalDateTime dateTime;
     private int buildNumber;
 
+    private String jobDuration;
+
     public String getJobName() {
         return jobName;
     }
@@ -29,5 +31,13 @@ public class JenkinsJobBuild {
 
     public void setBuildNumber(int buildNumber) {
         this.buildNumber = buildNumber;
+    }
+
+    public String getjobDuration() {
+        return jobDuration;
+    }
+
+    public void setjobDuration(String jobDuration) {
+        this.jobDuration = jobDuration;
     }
 }
