@@ -7,7 +7,6 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import javax.print.attribute.standard.JobName;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -23,14 +22,14 @@ public class JenkinsService {
     public JenkinsService() {
         this.restTemplate = new RestTemplate();
     }
-    public String getLatestJobBuild() throws JsonProcessingException {
+
+    public JenkinsJobBuild getLatestJobBuild() throws JsonProcessingException {
+
         String url = baseUrl + "job/project_jenkins/lastBuild/api/json";
-        //String jobName = "project_jenkins"; // Replace with your job name
 
         // Encode credentials
         String plainCredentials = username + ":" + password;
         String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-
         // Create headers with Authorization header
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic " + encodedCredentials);
@@ -61,25 +60,17 @@ public class JenkinsService {
 
             // Extract the timestamp
             String timestamp = rootNode.get("timestamp").asText();
-
-            System.out.println("\n");
-            System.out.println("Response Body: " + responseBody);
-            System.out.println("\n");
-            System.out.println("full display name : " + fullDisplayName);
-            System.out.println("Job name : " + jobName);
-            System.out.println("Build number : " + buildNumber);
-            System.out.println("Timestamp : " + timestamp);
-
-
-
+            // create an instance of JenkinsJobBuild
             JenkinsJobBuild jobBuild = new JenkinsJobBuild();
             jobBuild.setJobName(jobName);
             jobBuild.setTimestamp(timestamp);
             jobBuild.setBuildNumber(buildNumber);
 
+            return jobBuild;
+
         } else {
             System.out.println("Request failed with status code: " + responseStatus);
         }
-        return responseBody;
+        return null;
     }
 }

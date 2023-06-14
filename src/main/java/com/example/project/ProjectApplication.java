@@ -13,8 +13,11 @@ public class ProjectApplication {
             ConfigurableApplicationContext context = SpringApplication.run(ProjectApplication.class, args);
             JenkinsService jenkinsService = context.getBean(JenkinsService.class);
 
-            String response = jenkinsService.getLatestJobBuild();
-
+            JenkinsJobBuild response = jenkinsService.getLatestJobBuild();
+            System.out.println("\n");
+            System.out.println("Job name : " + response.getJobName());
+            System.out.println("Build number : " + response.getBuildNumber());
+            System.out.println("Timestamp : " + response.getTimestamp());
         }
     }
 
