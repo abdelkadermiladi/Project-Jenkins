@@ -1,8 +1,10 @@
 package com.example.project;
 
+import java.time.LocalDateTime;
+
 public class JenkinsJobBuild {
     private String jobName;
-    private String timestamp;
+    private LocalDateTime dateTime;
     private int buildNumber;
 
     public String getJobName() {
@@ -13,12 +15,12 @@ public class JenkinsJobBuild {
         this.jobName = jobName;
     }
 
-    public String getTimestamp() {
-        return timestamp;
+    public LocalDateTime getdateTime() {
+        return dateTime;
     }
 
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
+    public void setdateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
     }
 
     public int getBuildNumber() {

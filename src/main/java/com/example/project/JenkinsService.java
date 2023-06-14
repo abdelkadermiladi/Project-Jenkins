@@ -10,8 +10,15 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 @Service
 public class JenkinsService {
+
+
     @Value("${jenkins.baseUrl}")
     private String baseUrl;
     @Value("${jenkins.username}")
@@ -59,11 +66,16 @@ public class JenkinsService {
             int buildNumber = Integer.parseInt(parts[1].trim());
 
             // Extract the timestamp
-            String timestamp = rootNode.get("timestamp").asText();
+            String timestampS = rootNode.get("timestamp").asText();
+            long timestampI =Long.parseLong(timestampS);
+            Instant instant = Instant.ofEpochMilli(timestampI);
+            LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+
+
             // create an instance of JenkinsJobBuild
             JenkinsJobBuild jobBuild = new JenkinsJobBuild();
             jobBuild.setJobName(jobName);
-            jobBuild.setTimestamp(timestamp);
+            jobBuild.setdateTime(dateTime);
             jobBuild.setBuildNumber(buildNumber);
 
             return jobBuild;
@@ -73,4 +85,30 @@ public class JenkinsService {
         }
         return null;
     }
+    /*
+    public void triggerJobBuild(String jobName) {
+        String url = baseUrl + "job/" + jobName + "/build";
+
+        // Encode credentials
+        String plainCredentials = username + ":" + password;
+        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
+
+        // Create headers with Authorization header
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Basic " + encodedCredentials);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
+        // Send the POST request to trigger the build
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+
+        if (responseEntity.getStatusCode() == HttpStatus.CREATED) {
+            System.out.println("Build triggered successfully for job: " + jobName);
+        } else {
+            System.out.println("Failed to trigger build for job: " + jobName);
+        }
+    }
+
+    */
 }
