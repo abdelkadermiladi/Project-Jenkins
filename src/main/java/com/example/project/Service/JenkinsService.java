@@ -1,4 +1,7 @@
-package com.example.project;
+package com.example.project.Service;
+
+
+import com.example.project.Model.JenkinsJobBuild;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,12 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Base64;
 
 @Service
 public class JenkinsService {
@@ -73,9 +74,6 @@ public class JenkinsService {
 
             String jobDuration = rootNode.get("duration").asText();
 
-
-
-
             // create an instance of JenkinsJobBuild
             JenkinsJobBuild jobBuild = new JenkinsJobBuild();
             jobBuild.setJobName(jobName);
@@ -90,30 +88,5 @@ public class JenkinsService {
         }
         return null;
     }
-    /*
-    public void triggerJobBuild(String jobName) {
-        String url = baseUrl + "job/" + jobName + "/build";
 
-        // Encode credentials
-        String plainCredentials = username + ":" + password;
-        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-
-        // Create headers with Authorization header
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodedCredentials);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
-
-        // Send the POST request to trigger the build
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
-
-        if (responseEntity.getStatusCode() == HttpStatus.CREATED) {
-            System.out.println("Build triggered successfully for job: " + jobName);
-        } else {
-            System.out.println("Failed to trigger build for job: " + jobName);
-        }
-    }
-
-    */
 }
