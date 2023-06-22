@@ -8,6 +8,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 
 @SpringBootApplication
 public class ProjectApplication {
@@ -32,5 +35,22 @@ public class ProjectApplication {
         System.out.println("dateTime: " + response.getdateTime());
         System.out.println("jobDuration: " + response.getjobDuration() + " milliseconds");
 
+
+        // Define the start and end time for the time range
+        LocalDateTime startTime = LocalDateTime.now().minusHours(1); // Example: 1 hour ago
+        LocalDateTime endTime = LocalDateTime.now(); // Example: current time
+
+        // Get job builds within the specified time range
+        List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange(startTime, endTime);
+        System.out.println("-----------------------------------------");
+        System.out.println("Job Builds within Time Range:");
+        for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
+            System.out.println("Job name: " + jobBuild.getJobName());
+            System.out.println("Build number: " + jobBuild.getBuildNumber());
+            System.out.println("DateTime: " + jobBuild.getdateTime());
+            System.out.println("Job duration: " + jobBuild.getjobDuration() + " milliseconds");
+            System.out.println("-----------------------------------------");
+
+        }
     }
 }
