@@ -95,7 +95,35 @@ public class FinalController {
         }
     }
 
+    @GetMapping("/job-durations-by-time-range")
+    public ResponseEntity<Object> getJobDurationsByTimeRange() {
+        try {
+            // Define the start and end time for the time range
+            LocalDateTime startTime = LocalDateTime.now().minusHours(1); // Example: 1 hours ago
+            LocalDateTime endTime = LocalDateTime.now(); // Example: current time
 
+            // Get job builds within the specified time range
+            List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange(startTime, endTime);
+
+            if (!jobBuildsInRange.isEmpty()) {
+                List<Map<String, String>> response = new ArrayList<>();
+                for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
+                    Map<String, String> jobBuildData = new HashMap<>();
+                    jobBuildData.put("buildnumber", String.valueOf(jobBuild.getBuildNumber()));
+                    jobBuildData.put("duration", jobBuild.getjobDuration() + " milliseconds");
+                    response.add(jobBuildData);
+                }
+
+                return ResponseEntity.ok().body(response);
+            } else {
+                return ResponseEntity.ok().body(Collections.singletonMap("message", "No job builds found within the specified time range."));
+            }
+        } catch (JsonProcessingException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error processing the Jenkins job build data."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
+        }
+    }
 
 }
 
