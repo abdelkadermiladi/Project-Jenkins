@@ -128,7 +128,7 @@ public class FinalController {
 
             // Get job builds within the specified time range
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
             LocalDateTime startTimeD = LocalDateTime.parse(startTime, formatter);
             LocalDateTime endTimeD = LocalDateTime.parse(endTime, formatter);
 
