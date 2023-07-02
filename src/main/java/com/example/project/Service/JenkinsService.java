@@ -30,6 +30,43 @@ public class JenkinsService {
         this.restTemplate = new RestTemplate();
     }
 
+
+
+
+    private String getJobStatusFromJenkins(JsonNode rootNode) {
+        JsonNode colorNode = rootNode.get("color");
+        if (colorNode != null && colorNode.isTextual()) {
+            String color = colorNode.asText();
+            if (color.contains("blue")) {
+                return "SUCCESS";
+            } else if (color.contains("yellow")) {
+                return "UNSTABLE";
+            } else if (color.contains("red")) {
+                return "FAILURE";
+            } else if (color.contains("aborted")) {
+                return "ABORTED";
+            } else if (color.contains("disabled")) {
+                return "DISABLED";
+            }
+        }
+
+        JsonNode resultNode = rootNode.get("result");
+        if (resultNode != null && resultNode.isTextual()) {
+            String result = resultNode.asText();
+            if (result.equals("SUCCESS")) {
+                return "SUCCESS";
+            } else if (result.equals("UNSTABLE")) {
+                return "UNSTABLE";
+            } else if (result.equals("FAILURE")) {
+                return "FAILURE";
+            } else if (result.equals("ABORTED")) {
+                return "ABORTED";
+            }
+        }
+
+        return "UNKNOWN";
+    }
+
     public JenkinsJobBuild getLatestJobBuild() throws JsonProcessingException {
 
         String url = baseUrl + "job/project_jenkins/lastBuild/api/json";
@@ -73,12 +110,16 @@ public class JenkinsService {
 
             String jobDuration = rootNode.get("duration").asText();
 
+            // Retrieve the job status from Jenkins
+            String jobStatus = getJobStatusFromJenkins(rootNode);
+
             // create an instance of JenkinsJobBuild
             JenkinsJobBuild jobBuild = new JenkinsJobBuild();
             jobBuild.setJobName(jobName);
             jobBuild.setdateTime(dateTime);
             jobBuild.setBuildNumber(buildNumber);
             jobBuild.setjobDuration(jobDuration);
+            jobBuild.setJobStatus(jobStatus); // Set the job status
 
             return jobBuild;
 
@@ -87,6 +128,9 @@ public class JenkinsService {
         }
         return null;
     }
+
+
+
 
     public List<JenkinsJobBuild> getJobBuildsByTimeRange(LocalDateTime startTime, LocalDateTime endTime) throws JsonProcessingException {
         String url = baseUrl + "job/project_jenkins/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
@@ -141,7 +185,6 @@ public class JenkinsService {
                     jobBuild.setdateTime(dateTime);
                     jobBuild.setBuildNumber(buildNumber);
                     jobBuild.setjobDuration(jobDuration);
-
                     jobBuilds.add(jobBuild);
                 }
             }

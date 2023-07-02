@@ -9,6 +9,8 @@ public class JenkinsJobBuild {
 
     private String jobDuration;
 
+    private String jobStatus;
+
     public String getJobName() {
         return jobName;
     }
@@ -39,5 +41,13 @@ public class JenkinsJobBuild {
 
     public void setjobDuration(String jobDuration) {
         this.jobDuration = jobDuration;
+    }
+
+    public String getJobStatus() {
+        return jobStatus;
+    }
+
+    public void setJobStatus(String jobStatus) {
+        this.jobStatus = jobStatus;
     }
 }

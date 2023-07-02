@@ -34,6 +34,7 @@ public class ProjectApplication {
         System.out.println("Build number: " + response.getBuildNumber());
         System.out.println("dateTime: " + response.getdateTime());
         System.out.println("jobDuration: " + response.getjobDuration() + " milliseconds");
+        System.out.println("jobStatus: " + response.getJobStatus());
 
 
         // Define the start and end time for the time range
@@ -43,7 +44,7 @@ public class ProjectApplication {
         // Get job builds within the specified time range
         List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange(startTime, endTime);
         System.out.println("-----------------------------------------");
-        System.out.println("Job Builds within Time Range:");
+        System.out.println("Job Builds last hour:");
         for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
             System.out.println("Job name: " + jobBuild.getJobName());
             System.out.println("Build number: " + jobBuild.getBuildNumber());

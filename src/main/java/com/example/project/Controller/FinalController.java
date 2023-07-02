@@ -32,11 +32,13 @@ public class FinalController {
                 int buildnumber = jobBuild.getBuildNumber() ;
                 LocalDateTime date = jobBuild.getdateTime();
                 String duration = jobBuild.getjobDuration() +" millisecondes" ;
+                String jobStatus = jobBuild.getJobStatus();
                 Map<String, String> response = new HashMap<>();
                 response.put("jobname", jobname);
                 response.put("buildnumber", String.valueOf(buildnumber));
                 response.put("date", String.valueOf(date));
                 response.put("duration", duration);
+                response.put("jobStatus", jobStatus);
 
                 return ResponseEntity.ok().body(response);
             } else {
@@ -68,6 +70,7 @@ public class FinalController {
                     jobBuildData.put("buildnumber", String.valueOf(jobBuild.getBuildNumber()));
                     jobBuildData.put("date", String.valueOf(jobBuild.getdateTime()));
                     jobBuildData.put("duration", jobBuild.getjobDuration() + " milliseconds");
+
                     response.add(jobBuildData);
                 }
 
