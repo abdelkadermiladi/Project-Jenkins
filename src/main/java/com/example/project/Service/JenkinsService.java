@@ -135,6 +135,7 @@ public class JenkinsService {
     public List<JenkinsJobBuild> getJobBuildsByTimeRange(LocalDateTime startTime, LocalDateTime endTime) throws JsonProcessingException {
         String url = baseUrl + "job/project_jenkins/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
 
+
         // Encode credentials
         String plainCredentials = username + ":" + password;
         String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
@@ -160,6 +161,7 @@ public class JenkinsService {
             List<JenkinsJobBuild> jobBuilds = new ArrayList<>();
 
             // Iterate over the builds
+
             for (JsonNode buildNode : rootNode.get("allBuilds")) {
                 String fullDisplayName = buildNode.get("fullDisplayName").asText();
                 // Split the string by the '#' character
@@ -197,5 +199,82 @@ public class JenkinsService {
         return Collections.emptyList();
     }
 
+//////////////////////////////////////////////////////////////////////////
+    public static List<JenkinsJobBuild> getJobBuildsByTimeRange2(LocalDateTime startTime, LocalDateTime endTime) throws Exception {
 
+
+        String baseUrl = "http://localhost:8080/";
+        String username = "admin";
+        String password = "admin";
+
+        String url = baseUrl + "job/job_for_test/api/json?pretty=true&depth=2";
+
+        // Encode credentials
+        String plainCredentials = username + ":" + password;
+        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
+
+        // Create headers with Authorization header
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Basic " + encodedCredentials);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
+        // Create RestTemplate instance
+        RestTemplate restTemplate = new RestTemplate();
+
+        // Send the request and retrieve the response
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
+        HttpStatusCode responseStatus = responseEntity.getStatusCode();
+        String responseBody = responseEntity.getBody();
+
+        if (responseStatus == HttpStatus.OK) {
+            // Extract the values
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+
+            List<JenkinsJobBuild> jobBuilds = new ArrayList<>();
+
+            // Iterate over the builds
+            JsonNode buildsNode = rootNode.get("builds");
+            if (buildsNode.isArray()) {
+                for (JsonNode buildNode : buildsNode) {
+                    JenkinsJobBuild jobBuild = new JenkinsJobBuild();
+
+                    // Extract build information
+                    jobBuild.setJobName(rootNode.get("displayName").asText());
+                    jobBuild.setQueuingDuration(buildNode.path("actions").get(1).path("queuingDurationMillis").asText());
+                    jobBuild.setBuildNumber(buildNode.path("number").asInt());
+                    jobBuild.setJobStatus(buildNode.path("result").asText());
+                    jobBuild.setjobDuration(buildNode.path("duration").asText());
+                    String timestampS=buildNode.path("timestamp").asText();
+
+                    //Converting to local dataTime type:
+                    long timestampI =Long.parseLong(timestampS);
+                    Instant instant = Instant.ofEpochMilli(timestampI);
+                    LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+                    jobBuild.setdateTime(dateTime);
+
+
+                    LocalDateTime TheEndTime=jobBuild.CalculateTheEndTime();
+                    jobBuild.setTheEndTime(TheEndTime);
+
+                    LocalDateTime executionDate=jobBuild.CalculateExecutionDate();
+                    jobBuild.setExecutionDate(executionDate);
+
+                    if (dateTime.isAfter(startTime) && dateTime.isBefore(endTime)) {
+                        jobBuilds.add(jobBuild);
+                    }
+                }
+            }
+
+            return jobBuilds;
+        } else {
+            throw new Exception("Failed to retrieve job builds. Status: " + responseStatus);
+        }
+    }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
 }

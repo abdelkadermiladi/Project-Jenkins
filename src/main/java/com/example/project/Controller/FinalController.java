@@ -36,7 +36,7 @@ public class FinalController {
                 Map<String, String> response = new HashMap<>();
                 response.put("jobname", jobname);
                 response.put("buildnumber", String.valueOf(buildnumber));
-                response.put("date", String.valueOf(date));
+                response.put("Start date", String.valueOf(date));
                 response.put("duration", duration);
                 response.put("jobStatus", jobStatus);
 
@@ -56,7 +56,7 @@ public class FinalController {
     public ResponseEntity<Object> getJobBuildsByTimeRange() {
         try {
             // Define the start and end time for the time range
-            LocalDateTime startTime = LocalDateTime.now().minusHours(1); // Example: 1 hours ago
+            LocalDateTime startTime = LocalDateTime.now().minusHours(3); // Example: 1 hours ago
             LocalDateTime endTime = LocalDateTime.now(); // Example: current time
 
             // Get job builds within the specified time range
@@ -68,7 +68,7 @@ public class FinalController {
                     Map<String, String> jobBuildData = new HashMap<>();
                     jobBuildData.put("jobname", jobBuild.getJobName());
                     jobBuildData.put("buildnumber", String.valueOf(jobBuild.getBuildNumber()));
-                    jobBuildData.put("date", String.valueOf(jobBuild.getdateTime()));
+                    jobBuildData.put("Start date", String.valueOf(jobBuild.getdateTime()));
                     jobBuildData.put("duration", jobBuild.getjobDuration() + " milliseconds");
 
                     response.add(jobBuildData);
@@ -85,7 +85,7 @@ public class FinalController {
         }
     }
 
-
+/*
     @PostMapping("/job-builds-by-time-range-picker")
     public ResponseEntity<Object> getJobBuildsByTimeRangePicker(@RequestBody Map<String, String> dateData) {
         try {
@@ -121,6 +121,50 @@ public class FinalController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
         }
     }
+    */
+
+ //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ @PostMapping("/job-builds-by-time-range-picker")
+ public ResponseEntity<Object> getJobBuildsByTimeRangePicker(@RequestBody Map<String, String> dateData) {
+     try {
+         String startTime = dateData.get("startTime");
+         String endTime = dateData.get("endTime");
+
+         // Get job builds within the specified time range
+
+         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+         LocalDateTime startTimeD = LocalDateTime.parse(startTime, formatter);
+         LocalDateTime endTimeD = LocalDateTime.parse(endTime, formatter);
+
+         List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange2(startTimeD, endTimeD);
+
+         if (!jobBuildsInRange.isEmpty()) {
+             List<Map<String, String>> response = new ArrayList<>();
+             for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
+                 Map<String, String> jobBuildData = new HashMap<>();
+                 jobBuildData.put("jobname", jobBuild.getJobName());
+                 jobBuildData.put("buildnumber", String.valueOf(jobBuild.getBuildNumber()));
+                 jobBuildData.put("date", String.valueOf(jobBuild.getdateTime()));
+                 jobBuildData.put("duration", jobBuild.getjobDuration() + " milliseconds");
+                 jobBuildData.put("queuingDuration", jobBuild.getQueuingDuration()+ " milliseconds");
+                 jobBuildData.put("jobStatus", jobBuild.getJobStatus());
+                 jobBuildData.put("TheEndTime", String.valueOf(jobBuild.getTheEndTime()));
+                 jobBuildData.put("ExecutionDate", String.valueOf(jobBuild.getExecutionDate()));
+
+                 response.add(jobBuildData);
+             }
+
+             return ResponseEntity.ok().body(response);
+         } else {
+             return ResponseEntity.ok().body(Collections.singletonMap("message", "No job builds found within the specified time range."));
+         }
+     } catch (JsonProcessingException e) {
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error processing the Jenkins job build data."));
+     } catch (Exception e) {
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
+     }
+ }
+ /////////////////////////////////////////////////////////////////////////////
 
 }
 
