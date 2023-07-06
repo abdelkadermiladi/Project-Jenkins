@@ -20,11 +20,11 @@ import java.util.List;
 public class JenkinsService {
 
     @Value("${jenkins.baseUrl}")
-    private String baseUrl;
+    private static String baseUrl;
     @Value("${jenkins.username}")
-    private String username;
+    private static String username;
     @Value("${jenkins.password}")
-    private String password;
+    private static String password;
     private final RestTemplate restTemplate;
     public JenkinsService() {
         this.restTemplate = new RestTemplate();
@@ -69,7 +69,12 @@ public class JenkinsService {
 
     public JenkinsJobBuild getLatestJobBuild() throws JsonProcessingException {
 
-        String url = baseUrl + "job/project_jenkins/lastBuild/api/json";
+
+        String JenkinsUrl = "http://localhost:8080/";
+        String username = "admin";
+        String password = "admin";
+
+        String url = JenkinsUrl + "job/project_jenkins/lastBuild/api/json";
 
         // Encode credentials
         String plainCredentials = username + ":" + password;
@@ -133,7 +138,13 @@ public class JenkinsService {
 
 
     public List<JenkinsJobBuild> getJobBuildsByTimeRange(LocalDateTime startTime, LocalDateTime endTime) throws JsonProcessingException {
-        String url = baseUrl + "job/project_jenkins/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
+
+
+        String JenkinsUrl = "http://localhost:8080/";
+        String username = "admin";
+        String password = "admin";
+
+        String url = JenkinsUrl + "job/project_jenkins/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
 
 
         // Encode credentials
@@ -203,11 +214,11 @@ public class JenkinsService {
     public static List<JenkinsJobBuild> getJobBuildsByTimeRange2(LocalDateTime startTime, LocalDateTime endTime) throws Exception {
 
 
-        String baseUrl = "http://localhost:8080/";
+        String JenkinsUrl = "http://localhost:8080/";
         String username = "admin";
         String password = "admin";
 
-        String url = baseUrl + "job/job_for_test/api/json?pretty=true&depth=2";
+        String url = JenkinsUrl + "job/job_for_test/api/json?pretty=true&depth=2";
 
         // Encode credentials
         String plainCredentials = username + ":" + password;
@@ -277,4 +288,51 @@ public class JenkinsService {
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+
+    public List<String> getNodesNames() throws JsonProcessingException {
+
+
+        String JenkinsUrl = "http://localhost:8080/";
+        String username = "admin";
+        String password = "admin";
+
+        String url = JenkinsUrl+"computer/api/json";
+
+        // Encode credentials
+        String plainCredentials = username + ":" + password;
+        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
+        // Create headers with Authorization header
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Basic " + encodedCredentials);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+        // Send the request and retrieve the response
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
+
+        HttpStatusCode responseStatus = responseEntity.getStatusCode();
+        String responseBody = responseEntity.getBody();
+
+        if (responseStatus == HttpStatus.OK) {
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+
+            List<String> nodesList = new ArrayList<>();
+
+            for (JsonNode Node : rootNode.get("computer")) {
+                String displayName = Node.get("displayName").asText();
+                nodesList.add(displayName);
+            }
+            return nodesList;
+
+        } else {
+            System.out.println("Request failed with status code: " + responseStatus);
+        }
+        return null;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////
 }

@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 
+
+
 @SpringBootApplication
 public class ProjectApplication {
 
@@ -27,7 +29,9 @@ public class ProjectApplication {
     }
 
     public void run() throws Exception {
-
+        List<String> nodeNames = jenkinsService.getNodesNames();
+        System.out.println(nodeNames);
+    }
         //JenkinsJobBuild response = jenkinsService.getLatestJobBuild();
 //        System.out.println("\n");
 //        System.out.println("Job name: " + response.getJobName());
@@ -77,5 +81,5 @@ public class ProjectApplication {
 
 
 
-    }
+
 }

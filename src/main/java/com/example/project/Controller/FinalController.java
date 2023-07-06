@@ -36,7 +36,7 @@ public class FinalController {
                 Map<String, String> response = new HashMap<>();
                 response.put("jobname", jobname);
                 response.put("buildnumber", String.valueOf(buildnumber));
-                response.put("Start date", String.valueOf(date));
+                response.put("date", String.valueOf(date));
                 response.put("duration", duration);
                 response.put("jobStatus", jobStatus);
 
@@ -165,6 +165,21 @@ public class FinalController {
      }
  }
  /////////////////////////////////////////////////////////////////////////////
+
+    @GetMapping("/nodeNames")
+    public ResponseEntity<List<String>> getNodeNames() {
+        try {
+            List<String> nodeNames = jenkinsService.getNodesNames();
+            return ResponseEntity.ok(nodeNames);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    
+
+
+
 
 }
 
