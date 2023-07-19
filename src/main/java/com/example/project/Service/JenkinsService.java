@@ -217,8 +217,9 @@ public class JenkinsService {
         String JenkinsUrl = "http://localhost:8080/";
         String username = "admin";
         String password = "admin";
-
-        String url = JenkinsUrl + "job/job_for_test/api/json?pretty=true&depth=2";
+        // i can extract all the job names but not the job names working on a specific node !
+        //job name is project_jenkins
+        String url = JenkinsUrl + "job/project_jenkins/api/json?pretty=true&depth=2";
 
         // Encode credentials
         String plainCredentials = username + ":" + password;
