@@ -170,6 +170,7 @@ public class FinalController {
         try {
             String startTime = dateData.get("startTime");
             String endTime = dateData.get("endTime");
+            String selectedNode = dateData.get("selectedNode");
 
             // Get job names from the Jenkins server
             List<String> jobNames = jenkinsService.getAllJobNames();
@@ -197,7 +198,11 @@ public class FinalController {
                         objectToFind.put("number", String.valueOf(jobBuild.getBuildNumber()));
                         objectToFind.put("name", jobBuild.getJobName());
                         //The Selected Node Here :
-                        objectToFind.put("builtOn", "Madrid");
+                        //objectToFind.put("builtOn", "Madrid");
+                        if (selectedNode.equals("maître"))
+                            {objectToFind.put("builtOn", "");}
+                        else
+                            {objectToFind.put("builtOn", selectedNode);}
 
                         // Loop through the 'AllJobInfo' list and check if the object is present
                         for (Map<String, String> jobInfo : AllJobInfo) {
