@@ -11,10 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class JenkinsService {
@@ -30,9 +27,52 @@ public class JenkinsService {
         this.restTemplate = new RestTemplate();
     }
 
+/////////////////////////////////////////////////
+public List<String> getAllJobNames() throws JsonProcessingException {
 
 
+    String JenkinsUrl = "http://localhost:8080/";
+    String username = "admin";
+    String password = "admin";
 
+    String url = JenkinsUrl + "api/json?tree=jobs[name]";
+
+
+    // Encode credentials
+    String plainCredentials = username + ":" + password;
+    String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
+
+    // Create headers with Authorization header
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Basic " + encodedCredentials);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
+    // Send the request and retrieve the response
+    ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
+    HttpStatusCode responseStatus = responseEntity.getStatusCode();
+    String responseBody = responseEntity.getBody();
+
+    if (responseStatus == HttpStatus.OK) {
+        // Extract the job names from the response
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(responseBody);
+        JsonNode jobsNode = rootNode.get("jobs");
+        List<String> jobNames = new ArrayList<>();
+
+        for (JsonNode jobNode : jobsNode) {
+            String jobName = jobNode.get("name").asText();
+            jobNames.add(jobName);
+        }
+
+        return jobNames;
+    } else {
+        throw new RuntimeException("Failed to fetch job data from Jenkins. Status code: " + responseStatus);
+    }
+}
+//////////////////////////////////////////////////////////////////////////
     private String getJobStatusFromJenkins(JsonNode rootNode) {
         JsonNode colorNode = rootNode.get("color");
         if (colorNode != null && colorNode.isTextual()) {
@@ -137,14 +177,14 @@ public class JenkinsService {
 
 
 
-    public List<JenkinsJobBuild> getJobBuildsByTimeRange(LocalDateTime startTime, LocalDateTime endTime) throws JsonProcessingException {
+    public List<JenkinsJobBuild> getJobBuildsByTimeRange(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws JsonProcessingException {
 
 
         String JenkinsUrl = "http://localhost:8080/";
         String username = "admin";
         String password = "admin";
 
-        String url = JenkinsUrl + "job/project_jenkins/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
+        String url = JenkinsUrl + "job/"+ TheJobName +"/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
 
 
         // Encode credentials
@@ -211,15 +251,15 @@ public class JenkinsService {
     }
 
 //////////////////////////////////////////////////////////////////////////
-    public static List<JenkinsJobBuild> getJobBuildsByTimeRange2(LocalDateTime startTime, LocalDateTime endTime) throws Exception {
+    public static List<JenkinsJobBuild> getJobBuildsByTimeRange2(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
 
 
         String JenkinsUrl = "http://localhost:8080/";
         String username = "admin";
         String password = "admin";
         // i can extract all the job names but not the job names working on a specific node !
-        //job name is project_jenkins
-        String url = JenkinsUrl + "job/project_jenkins/api/json?pretty=true&depth=2";
+
+        String url = JenkinsUrl + "job/"+ TheJobName +"/api/json?pretty=true&depth=2";
 
         // Encode credentials
         String plainCredentials = username + ":" + password;
@@ -251,6 +291,7 @@ public class JenkinsService {
             // Iterate over the builds
             JsonNode buildsNode = rootNode.get("builds");
             if (buildsNode.isArray()) {
+
                 for (JsonNode buildNode : buildsNode) {
                     JenkinsJobBuild jobBuild = new JenkinsJobBuild();
 
@@ -284,6 +325,68 @@ public class JenkinsService {
             return jobBuilds;
         } else {
             throw new Exception("Failed to retrieve job builds. Status: " + responseStatus);
+        }
+    }
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    public ResponseEntity<Object> getallJobInfo() {
+        try {
+            String JenkinsUrl = "http://localhost:8080/";
+            String username = "admin";
+            String password = "admin";
+
+            String url = JenkinsUrl + "api/json?tree=jobs[name,builds[number,builtOn]]";
+
+            // Encode credentials
+            String plainCredentials = username + ":" + password;
+            String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
+
+            // Create headers with Authorization header
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Basic " + encodedCredentials);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
+            // Create RestTemplate instance
+            RestTemplate restTemplate = new RestTemplate();
+
+            // Send the request and retrieve the response
+            ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
+            HttpStatusCode responseStatus = responseEntity.getStatusCode();
+            String responseBody = responseEntity.getBody();
+
+            List<Map<String, String>> jobInfoList = new ArrayList<>();
+
+            if (responseStatus == HttpStatus.OK) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode rootNode = objectMapper.readTree(responseBody);
+                JsonNode jobsNode = rootNode.get("jobs");
+
+                for (JsonNode jobNode : jobsNode) {
+                    String jobName = jobNode.get("name").asText();
+
+                    JsonNode buildsNode = jobNode.get("builds");
+                    for (JsonNode buildNode : buildsNode) {
+                        String number = buildNode.get("number").asText();
+                        String builtOn = buildNode.has("builtOn") ? buildNode.get("builtOn").asText() : "-";
+
+                        Map<String, String> jobInfo = new HashMap<>();
+                        jobInfo.put("name", jobName);
+                        jobInfo.put("number", number);
+                        jobInfo.put("builtOn", builtOn);
+                        jobInfoList.add(jobInfo);
+                    }
+                }
+
+                return ResponseEntity.ok().body(jobInfoList);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Failed to fetch job data from Jenkins. Status code: " + responseStatus));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
         }
     }
 

@@ -20,6 +20,9 @@ public class ProjectApplication {
     @Autowired
     private JenkinsService jenkinsService;
 
+    public ProjectApplication() throws JsonProcessingException {
+    }
+
     public static void main(String[] args) throws Exception {
         ConfigurableApplicationContext context = SpringApplication.run(ProjectApplication.class, args);
 
@@ -29,8 +32,16 @@ public class ProjectApplication {
     }
 
     public void run() throws Exception {
-        List<String> nodeNames = jenkinsService.getNodesNames();
-        System.out.println(nodeNames);
+        //  List<String> nodeNames = jenkinsService.getNodesNames();
+        //   System.out.println(nodeNames);
+        // }
+
+
+        List<String> jobNames = jenkinsService.getAllJobNames();
+        System.out.println("Job Names:");
+        for (String name : jobNames) {
+            System.out.println(name);
+        }
     }
         //JenkinsJobBuild response = jenkinsService.getLatestJobBuild();
 //        System.out.println("\n");
@@ -75,9 +86,6 @@ public class ProjectApplication {
      //            System.out.println("The end Time: " + jobBuild.getTheEndTime() );
      //            System.out.println("The Execution Date: " + jobBuild.getExecutionDate() );
      //            System.out.println("-----------------------------------------");
-
-
-
 
 
 
