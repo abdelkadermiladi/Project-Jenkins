@@ -2,14 +2,9 @@ package com.example.project.Controller;
 import com.example.project.Model.JenkinsJobBuild;
 import com.example.project.Service.JenkinsService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
-
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -27,6 +22,8 @@ public class FinalController {
         this.jenkinsService = jenkinsService;
     }
 
+
+    //////////////////////////////////////////////////////////////////
     @GetMapping("/last-job-build-description")
     public ResponseEntity<Object> getLastJobDescription() {
         try {
@@ -56,12 +53,12 @@ public class FinalController {
     }
 
 
-    /////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////
     @GetMapping("/job-builds-last-hour")
-    public ResponseEntity<Object> getJobBuildsByTimeRange() {
+    public ResponseEntity<Object> getJobBuildsLastHour() {
         try {
             // Define the start and end time for the time range
-            LocalDateTime startTime = LocalDateTime.now().minusHours(3); // Example: 3 hours ago
+            LocalDateTime startTime = LocalDateTime.now().minusHours(1); // Example: 1 hours ago
             LocalDateTime endTime = LocalDateTime.now(); // Example: current time
 
             // Get all job names
@@ -71,10 +68,9 @@ public class FinalController {
 
             for (String jobName : jobNames) {
                 // Get job builds within the specified time range for each job name
-                List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange(startTime, endTime, jobName);
+                List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange1(startTime, endTime, jobName);
 
                 for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
-
 
                     Map<String, String> jobBuildData = new HashMap<>();
                     jobBuildData.put("jobname", jobBuild.getJobName());
@@ -98,7 +94,7 @@ public class FinalController {
         }
     }
 
-    /////////////////////////////
+    //////////////////////////////////////////////////////////////////
     @GetMapping("/nodeNames")
     public ResponseEntity<List<String>> getNodeNames() {
         try {
@@ -109,62 +105,14 @@ public class FinalController {
         }
     }
 
-
-///////////////////////////
-
+    //////////////////////////////////////////////////////////////////
 
     @GetMapping("/get-job-info")
     public ResponseEntity<Object> getallJobInfo() {
         return jenkinsService.getallJobInfo();
     }
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //@PostMapping("/job-builds-by-time-range-picker")
-// public ResponseEntity<Object> getJobBuildsByTimeRangePicker(@RequestBody Map<String, String> dateData) {
-//     try {
-    //       String startTime = dateData.get("startTime");
-    //       String endTime = dateData.get("endTime");
 
-    // Get job names from the Jenkins server
-    //        List<String> jobNames = jenkinsService.getAllJobNames();
-
-    // Prepare the response list to store data for each job build
-    //      List<Map<String, String>> response = new ArrayList<>();
-
-    // Loop through the job names and get job builds within the specified time range for each job
-    //       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-    //       LocalDateTime startTimeD = LocalDateTime.parse(startTime, formatter);
-    //        LocalDateTime endTimeD = LocalDateTime.parse(endTime, formatter);
-
-    //      for (String jobName : jobNames) {
-    //          List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange2(startTimeD, endTimeD, jobName);
-
-    //          for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
-    //              Map<String, String> jobBuildData = new HashMap<>();
-    //             jobBuildData.put("jobname", jobBuild.getJobName());
-    //             jobBuildData.put("buildnumber", String.valueOf(jobBuild.getBuildNumber()));
-    //              jobBuildData.put("date", String.valueOf(jobBuild.getdateTime()));
-    //              jobBuildData.put("duration", jobBuild.getjobDuration() + " milliseconds");
-    //              jobBuildData.put("queuingDuration", jobBuild.getQueuingDuration()+ " milliseconds");
-    //               jobBuildData.put("jobStatus", jobBuild.getJobStatus());
-    //               jobBuildData.put("TheEndTime", String.valueOf(jobBuild.getTheEndTime()));
-    //              jobBuildData.put("ExecutionDate", String.valueOf(jobBuild.getExecutionDate()));
-
-    //             response.add(jobBuildData);
-    //          }
-    //      }
-
-    //        if (!response.isEmpty()) {
-    //         return ResponseEntity.ok().body(response);
-    //       } else {
-    //          return ResponseEntity.ok().body(Collections.singletonMap("message", "No job builds found within the specified time range."));
-    //       }
-    //   } catch (JsonProcessingException e) {
-    //       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error processing the Jenkins job build data."));
-    //   } catch (Exception e) {
-    //       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
-    //   }
-    //}
-////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////
     @PostMapping("/job-builds-by-time-range-picker")
     public ResponseEntity<Object> getJobBuildsByTimeRangePicker(@RequestBody Map<String, String> dateData) {
         try {
@@ -238,7 +186,7 @@ public class FinalController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
         }
     }
-    ////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////
 
     @PostMapping("/SelectedNode")
     public ResponseEntity<Object> getSelectedNode(@RequestBody Map<String, String> requestData) {
@@ -257,10 +205,8 @@ public class FinalController {
                     .body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
         }
     }
-    /////////////////////////////////
-
+    //////////////////////////////////////////////////////////////////
 
 
 }
 
- /////////////////////////////////////////////////////////////////////////////

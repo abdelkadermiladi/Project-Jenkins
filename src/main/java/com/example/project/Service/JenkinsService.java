@@ -3,7 +3,6 @@ import com.example.project.Model.JenkinsJobBuild;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -15,64 +14,62 @@ import java.util.*;
 
 @Service
 public class JenkinsService {
-
-    @Value("${jenkins.baseUrl}")
-    private static String baseUrl;
-    @Value("${jenkins.username}")
-    private static String username;
-    @Value("${jenkins.password}")
-    private static String password;
     private final RestTemplate restTemplate;
     public JenkinsService() {
         this.restTemplate = new RestTemplate();
     }
 
-/////////////////////////////////////////////////
-public List<String> getAllJobNames() throws JsonProcessingException {
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //Get the authorization headers from jenkins server:
+    public HttpHeaders getAuthHeadersJenkins(String username, String password) {
 
+        // Encode credentials
+        String plainCredentials = username + ":" + password;
+        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
 
-    String JenkinsUrl = "http://localhost:8080/";
-    String username = "admin";
-    String password = "admin";
+        // Create headers with Authorization header
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Basic " + encodedCredentials);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-    String url = JenkinsUrl + "api/json?tree=jobs[name]";
-
-
-    // Encode credentials
-    String plainCredentials = username + ":" + password;
-    String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-
-    // Create headers with Authorization header
-    HttpHeaders headers = new HttpHeaders();
-    headers.set("Authorization", "Basic " + encodedCredentials);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    HttpEntity<String> requestEntity = new HttpEntity<>(headers);
-
-    // Send the request and retrieve the response
-    ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
-
-    HttpStatusCode responseStatus = responseEntity.getStatusCode();
-    String responseBody = responseEntity.getBody();
-
-    if (responseStatus == HttpStatus.OK) {
-        // Extract the job names from the response
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(responseBody);
-        JsonNode jobsNode = rootNode.get("jobs");
-        List<String> jobNames = new ArrayList<>();
-
-        for (JsonNode jobNode : jobsNode) {
-            String jobName = jobNode.get("name").asText();
-            jobNames.add(jobName);
-        }
-
-        return jobNames;
-    } else {
-        throw new RuntimeException("Failed to fetch job data from Jenkins. Status code: " + responseStatus);
+        return headers;
     }
-}
-//////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //retrieve all the job name from jenkins server
+    public List<String> getAllJobNames() throws JsonProcessingException {
+
+        String JenkinsUrl="http://localhost:8080/";
+
+        String url = JenkinsUrl+"api/json?tree=jobs[name]";
+
+        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
+        // Send the request and retrieve the response
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
+        HttpStatusCode responseStatus = responseEntity.getStatusCode();
+        String responseBody = responseEntity.getBody();
+
+        if (responseStatus == HttpStatus.OK) {
+            // Extract the job names from the response
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            JsonNode jobsNode = rootNode.get("jobs");
+            List<String> jobNames = new ArrayList<>();
+
+            for (JsonNode jobNode : jobsNode) {
+                String jobName = jobNode.get("name").asText();
+                jobNames.add(jobName);
+            }
+
+            return jobNames;
+        } else {
+            throw new RuntimeException("Failed to fetch job data from Jenkins. Status code: " + responseStatus);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////
     private String getJobStatusFromJenkins(JsonNode rootNode) {
         JsonNode colorNode = rootNode.get("color");
         if (colorNode != null && colorNode.isTextual()) {
@@ -107,25 +104,18 @@ public List<String> getAllJobNames() throws JsonProcessingException {
         return "UNKNOWN";
     }
 
+
+    ///////////////////////////////////////////////////////////////////////////////////////
     public JenkinsJobBuild getLatestJobBuild() throws JsonProcessingException {
 
+        String JenkinsUrl="http://localhost:8080/";
 
-        String JenkinsUrl = "http://localhost:8080/";
-        String username = "admin";
-        String password = "admin";
+        String url = JenkinsUrl+"job/project_jenkins/lastBuild/api/json";
 
-        String url = JenkinsUrl + "job/project_jenkins/lastBuild/api/json";
-
-        // Encode credentials
-        String plainCredentials = username + ":" + password;
-        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-        // Create headers with Authorization header
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodedCredentials);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
+        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
 
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
         // Send the request and retrieve the response
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
 
@@ -175,27 +165,15 @@ public List<String> getAllJobNames() throws JsonProcessingException {
     }
 
 
-
-
-    public List<JenkinsJobBuild> getJobBuildsByTimeRange(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws JsonProcessingException {
-
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //This method will be used to retrieve last hour job builds
+    public List<JenkinsJobBuild> getJobBuildsByTimeRange1(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws JsonProcessingException {
 
         String JenkinsUrl = "http://localhost:8080/";
-        String username = "admin";
-        String password = "admin";
-
-        String url = JenkinsUrl + "job/"+ TheJobName +"/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
-
+        String url = JenkinsUrl+"job/"+ TheJobName +"/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
 
         // Encode credentials
-        String plainCredentials = username + ":" + password;
-        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-
-        // Create headers with Authorization header
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodedCredentials);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
+        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Send the request and retrieve the response
@@ -250,26 +228,15 @@ public List<String> getAllJobNames() throws JsonProcessingException {
         return Collections.emptyList();
     }
 
-//////////////////////////////////////////////////////////////////////////
-    public static List<JenkinsJobBuild> getJobBuildsByTimeRange2(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
-
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //This method will be used to retrieve time range job builds
+    public List<JenkinsJobBuild> getJobBuildsByTimeRange2(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
 
         String JenkinsUrl = "http://localhost:8080/";
-        String username = "admin";
-        String password = "admin";
-        // i can extract all the job names but not the job names working on a specific node !
 
         String url = JenkinsUrl + "job/"+ TheJobName +"/api/json?pretty=true&depth=2";
 
-        // Encode credentials
-        String plainCredentials = username + ":" + password;
-        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-
-        // Create headers with Authorization header
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodedCredentials);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
+        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Create RestTemplate instance
@@ -327,26 +294,16 @@ public List<String> getAllJobNames() throws JsonProcessingException {
             throw new Exception("Failed to retrieve job builds. Status: " + responseStatus);
         }
     }
-////////////////////////////////////////////////////////////////////////////////////////////
 
-
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //retrieve all {JobName , buildNumber, NodeName}
     public ResponseEntity<Object> getallJobInfo() {
         try {
             String JenkinsUrl = "http://localhost:8080/";
-            String username = "admin";
-            String password = "admin";
 
             String url = JenkinsUrl + "api/json?tree=jobs[name,builds[number,builtOn]]";
 
-            // Encode credentials
-            String plainCredentials = username + ":" + password;
-            String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-
-            // Create headers with Authorization header
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Basic " + encodedCredentials);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
+            HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
             HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
             // Create RestTemplate instance
@@ -390,27 +347,16 @@ public List<String> getAllJobNames() throws JsonProcessingException {
         }
     }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //Retrieve all NodeNames in Jenkins Server
     public List<String> getNodesNames() throws JsonProcessingException {
 
 
         String JenkinsUrl = "http://localhost:8080/";
-        String username = "admin";
-        String password = "admin";
 
         String url = JenkinsUrl+"computer/api/json";
 
-        // Encode credentials
-        String plainCredentials = username + ":" + password;
-        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
-        // Create headers with Authorization header
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodedCredentials);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-
+        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
         // Send the request and retrieve the response
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);

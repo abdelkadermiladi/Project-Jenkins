@@ -75,7 +75,7 @@ public class JenkinsJobBuild {
     public LocalDateTime CalculateTheEndTime() {
         //EndTime=StartDate+Duration
         String durationString = this.jobDuration;
-        durationString = durationString.replaceAll("[^\\d]", ""); // Supprimer tous les caractères non numériques
+        durationString = durationString.replaceAll("[^\\d]", ""); // Remove all non-numeric characters
         long durationMillis = Long.parseLong(durationString);
         LocalDateTime EndTime = this.dateTime.plus(durationMillis, ChronoUnit.MILLIS);
         this.TheEndTime = EndTime;
@@ -101,7 +101,7 @@ public class JenkinsJobBuild {
         }
         else
         {
-            queuingDuration = queuingDuration.replaceAll("[^\\d]", ""); // Supprimer tous les caractères non numériques
+            queuingDuration = queuingDuration.replaceAll("[^\\d]", ""); // Remove all non-numeric characters
             long durationMillis = Long.parseLong(queuingDuration);
             LocalDateTime executionDate = this.dateTime.plus(durationMillis, ChronoUnit.MILLIS);
             this.ExecutionDate = executionDate;
