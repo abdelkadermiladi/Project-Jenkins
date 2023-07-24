@@ -16,24 +16,51 @@ import java.util.*;
 public class JenkinsService {
     private final RestTemplate restTemplate;
     public JenkinsService() {
+        System.out.println("start JenkinsService");
+
         this.restTemplate = new RestTemplate();
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
-    //Get the authorization headers from jenkins server:
     public HttpHeaders getAuthHeadersJenkins(String username, String password) {
+        try {
+            // Encode credentials
+            String plainCredentials = username + ":" + password;
+            String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
 
-        // Encode credentials
-        String plainCredentials = username + ":" + password;
-        String encodedCredentials = Base64.getEncoder().encodeToString(plainCredentials.getBytes(StandardCharsets.UTF_8));
+            // Create headers with Authorization header
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Basic " + encodedCredentials);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Create headers with Authorization header
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodedCredentials);
-        headers.setContentType(MediaType.APPLICATION_JSON);
+            // Perform a test request to Jenkins to check authentication
+            // If the request succeeds, it means the provided credentials are valid
+            String testUrl = "http://localhost:8080/api/json";
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
-        return headers;
+            ResponseEntity<String> responseEntity = restTemplate.exchange(testUrl, HttpMethod.GET, requestEntity, String.class);
+
+            if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                // Return the headers if authentication is successful
+                return headers;
+            } else {
+                // If authentication fails, return null or throw an exception, based on your requirements
+                return null;
+            }
+        } catch (Exception e) {
+            // Handle any exceptions that might occur during authentication
+            // For example, log the error and return null or throw an exception
+            e.printStackTrace();
+            return null;
+        } finally {
+            // Clear sensitive data
+            password = null;
+        }
     }
+
+
+
+
     ///////////////////////////////////////////////////////////////////////////////////////
     //retrieve all the job name from jenkins server
     public List<String> getAllJobNames() throws JsonProcessingException {
@@ -106,13 +133,13 @@ public class JenkinsService {
 
 
     ///////////////////////////////////////////////////////////////////////////////////////
-    public JenkinsJobBuild getLatestJobBuild() throws JsonProcessingException {
+    public JenkinsJobBuild getLatestJobBuild(HttpHeaders headers) throws JsonProcessingException {
 
         String JenkinsUrl="http://localhost:8080/";
 
         String url = JenkinsUrl+"job/project_jenkins/lastBuild/api/json";
 
-        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
+        //HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
 
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 

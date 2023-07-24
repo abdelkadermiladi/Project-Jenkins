@@ -1,4 +1,5 @@
 package com.example.project.Controller;
+import com.example.project.Model.AuthHeaders;
 import com.example.project.Model.JenkinsJobBuild;
 import com.example.project.Service.JenkinsService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,18 +17,32 @@ import java.util.*;
 public class FinalController {
 
     private final JenkinsService jenkinsService;
+    private AuthHeaders authHeaders;
 
     @Autowired
-    public FinalController(JenkinsService jenkinsService) {
-        this.jenkinsService = jenkinsService;
+    public FinalController() {
+        System.out.println("start FinalController()");
+
+        this.jenkinsService = new JenkinsService();
+        this.authHeaders = new AuthHeaders();
     }
 
 
     //////////////////////////////////////////////////////////////////
     @GetMapping("/last-job-build-description")
     public ResponseEntity<Object> getLastJobDescription() {
+        System.out.println("start getLastJobDescription()");
         try {
-            JenkinsJobBuild jobBuild = jenkinsService.getLatestJobBuild();
+            HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
+
+            if (headers == null) {
+                System.out.println("headers null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Not authenticated."));
+            }
+            else {
+                System.out.println("headers =" + headers.toString());
+            }
+            JenkinsJobBuild jobBuild = jenkinsService.getLatestJobBuild(headers);
             if (jobBuild != null) {
                 String jobname = jobBuild.getJobName();
                 int buildnumber = jobBuild.getBuildNumber();
@@ -207,6 +222,26 @@ public class FinalController {
     }
     //////////////////////////////////////////////////////////////////
 
+    @PostMapping("/authenticate")
+    public ResponseEntity<String> authenticate(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        // Authenticate the user using JenkinsService
+        HttpHeaders headers = jenkinsService.getAuthHeadersJenkins(username, password);
+
+        if (headers != null) {
+            // If authentication is successful, set the headers in the session-scoped bean
+            authHeaders.setHeaders(headers);
+            HttpHeaders s = authHeaders.getHeaders();
+            System.out.println("authenticate:" + s.toString());
+
+            return ResponseEntity.ok().build();
+        } else {
+            // If authentication fails, return a 401 Unauthorized response
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
 
 }
 
