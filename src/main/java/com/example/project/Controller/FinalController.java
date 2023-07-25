@@ -20,10 +20,10 @@ public class FinalController {
     private AuthHeaders authHeaders;
 
     @Autowired
-    public FinalController() {
+    public FinalController(JenkinsService jenkinsServ) {
         System.out.println("start FinalController()");
 
-        this.jenkinsService = new JenkinsService();
+        this.jenkinsService = jenkinsServ;
         this.authHeaders = new AuthHeaders();
     }
 
@@ -72,18 +72,28 @@ public class FinalController {
     @GetMapping("/job-builds-last-hour")
     public ResponseEntity<Object> getJobBuildsLastHour() {
         try {
+
+            HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
+            if (headers == null) {
+                System.out.println("headers null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Not authenticated."));
+            }
+            else {
+                System.out.println("headers =" + headers.toString());
+            }
+
             // Define the start and end time for the time range
             LocalDateTime startTime = LocalDateTime.now().minusHours(1); // Example: 1 hours ago
             LocalDateTime endTime = LocalDateTime.now(); // Example: current time
 
             // Get all job names
-            List<String> jobNames = jenkinsService.getAllJobNames();
+            List<String> jobNames = jenkinsService.getAllJobNames(headers);
 
             List<Map<String, String>> response = new ArrayList<>();
 
             for (String jobName : jobNames) {
                 // Get job builds within the specified time range for each job name
-                List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange1(startTime, endTime, jobName);
+                List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange1(headers,startTime, endTime, jobName);
 
                 for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
 
@@ -113,7 +123,9 @@ public class FinalController {
     @GetMapping("/nodeNames")
     public ResponseEntity<List<String>> getNodeNames() {
         try {
-            List<String> nodeNames = jenkinsService.getNodesNames();
+            HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
+
+            List<String> nodeNames = jenkinsService.getNodesNames(headers);
             return ResponseEntity.ok(nodeNames);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -124,19 +136,37 @@ public class FinalController {
 
     @GetMapping("/get-job-info")
     public ResponseEntity<Object> getallJobInfo() {
-        return jenkinsService.getallJobInfo();
+
+        HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
+
+        return jenkinsService.getallJobInfo(headers);
     }
 
     //////////////////////////////////////////////////////////////////
     @PostMapping("/job-builds-by-time-range-picker")
     public ResponseEntity<Object> getJobBuildsByTimeRangePicker(@RequestBody Map<String, String> dateData) {
         try {
+
+            HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
+
+            if (headers == null) {
+                System.out.println("headers null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Not authenticated."));
+            }
+            else {
+                System.out.println("headers =" + headers.toString());
+            }
+
+
+            // Get job names from the Jenkins server
+            List<String> jobNames = jenkinsService.getAllJobNames(headers);
+
+
             String startTime = dateData.get("startTime");
             String endTime = dateData.get("endTime");
             String selectedNode = dateData.get("selectedNode");
 
-            // Get job names from the Jenkins server
-            List<String> jobNames = jenkinsService.getAllJobNames();
+
 
             // Prepare the response list to store data for each job build
             List<Map<String, String>> response = new ArrayList<>();
@@ -146,14 +176,14 @@ public class FinalController {
             LocalDateTime startTimeD = LocalDateTime.parse(startTime, formatter);
             LocalDateTime endTimeD = LocalDateTime.parse(endTime, formatter);
 
-            ResponseEntity<Object> AllJobInfoResponse = jenkinsService.getallJobInfo();
+            ResponseEntity<Object> AllJobInfoResponse = jenkinsService.getallJobInfo(headers);
             Object AllJobInfoObject = AllJobInfoResponse.getBody();
 
             if (AllJobInfoObject instanceof List) {
                 List<Map<String, String>> AllJobInfo = (List<Map<String, String>>) AllJobInfoObject;
 
                 for (String jobName : jobNames) {
-                    List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange2(startTimeD, endTimeD, jobName);
+                    List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange2(headers,startTimeD, endTimeD, jobName);
 
                     for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
                         // The object to find

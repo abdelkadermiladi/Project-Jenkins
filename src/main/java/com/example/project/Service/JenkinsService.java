@@ -63,17 +63,17 @@ public class JenkinsService {
 
     ///////////////////////////////////////////////////////////////////////////////////////
     //retrieve all the job name from jenkins server
-    public List<String> getAllJobNames() throws JsonProcessingException {
+    public List<String> getAllJobNames(HttpHeaders headers) throws JsonProcessingException {
 
         String JenkinsUrl="http://localhost:8080/";
 
         String url = JenkinsUrl+"api/json?tree=jobs[name]";
 
-        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Send the request and retrieve the response
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
 
         HttpStatusCode responseStatus = responseEntity.getStatusCode();
         String responseBody = responseEntity.getBody();
@@ -133,78 +133,79 @@ public class JenkinsService {
 
 
     ///////////////////////////////////////////////////////////////////////////////////////
+
     public JenkinsJobBuild getLatestJobBuild(HttpHeaders headers) throws JsonProcessingException {
-
-        String JenkinsUrl="http://localhost:8080/";
-
-        String url = JenkinsUrl+"job/project_jenkins/lastBuild/api/json";
-
-        //HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
-
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+        String JenkinsUrl = "http://localhost:8080/";
 
-        // Send the request and retrieve the response
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+        List<String> allJobNames = getAllJobNames(headers);
+        JenkinsJobBuild latestJobBuild = null;
+        LocalDateTime latestDateTime = LocalDateTime.MIN; // Initialize to the smallest possible value
 
+        for (String jobName : allJobNames) {
+            String url = JenkinsUrl + "job/" + jobName + "/lastBuild/api/json";
 
-        HttpStatusCode responseStatus = responseEntity.getStatusCode();
-        String responseBody = responseEntity.getBody();
+            // Send the request and retrieve the response
+            ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+            HttpStatusCode responseStatus = responseEntity.getStatusCode();
+            String responseBody = responseEntity.getBody();
 
-        if (responseStatus == HttpStatus.OK) {
+            if (responseStatus == HttpStatus.OK) {
+                // Extract the values
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode rootNode = objectMapper.readTree(responseBody);
 
-            // Extract the values
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(responseBody);
+                String fullDisplayName = rootNode.get("fullDisplayName").asText();
+                // Split the string by the '#' character
+                String[] parts = fullDisplayName.split("#");
+                // Extract the BuildNumber
+                int buildNumber = Integer.parseInt(parts[1].trim());
 
-            String fullDisplayName = rootNode.get("fullDisplayName").asText();
-            // Split the string by the '#' character
-            String[] parts = fullDisplayName.split("#");
-            // Extract the JobName
-            String jobName = parts[0].trim();
-            // Extract the BuildNumber
-            int buildNumber = Integer.parseInt(parts[1].trim());
+                // Extract the timestamp
+                String timestampS = rootNode.get("timestamp").asText();
+                long timestampI = Long.parseLong(timestampS);
+                Instant instant = Instant.ofEpochMilli(timestampI);
+                LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-            // Extract the timestamp
-            String timestampS = rootNode.get("timestamp").asText();
-            long timestampI =Long.parseLong(timestampS);
-            Instant instant = Instant.ofEpochMilli(timestampI);
-            LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+                if (dateTime.isAfter(latestDateTime)) {
+                    // If the current build has a more recent datetime, update the latestJobBuild
+                    latestDateTime = dateTime;
 
-            String jobDuration = rootNode.get("duration").asText();
+                    // Retrieve other job information (e.g., job name, duration, status)
+                    String jobDuration = rootNode.get("duration").asText();
+                    String jobStatus = getJobStatusFromJenkins(rootNode);
 
-            // Retrieve the job status from Jenkins
-            String jobStatus = getJobStatusFromJenkins(rootNode);
-
-            // create an instance of JenkinsJobBuild
-            JenkinsJobBuild jobBuild = new JenkinsJobBuild();
-            jobBuild.setJobName(jobName);
-            jobBuild.setdateTime(dateTime);
-            jobBuild.setBuildNumber(buildNumber);
-            jobBuild.setjobDuration(jobDuration);
-            jobBuild.setJobStatus(jobStatus); // Set the job status
-
-            return jobBuild;
-
-        } else {
-            System.out.println("Request failed with status code: " + responseStatus);
+                    // Create an instance of JenkinsJobBuild
+                    latestJobBuild = new JenkinsJobBuild();
+                    latestJobBuild.setJobName(jobName);
+                    latestJobBuild.setdateTime(dateTime);
+                    latestJobBuild.setBuildNumber(buildNumber);
+                    latestJobBuild.setjobDuration(jobDuration);
+                    latestJobBuild.setJobStatus(jobStatus); // Set the job status
+                }
+            } else {
+                System.out.println("Request failed with status code: " + responseStatus);
+            }
         }
-        return null;
+
+        return latestJobBuild;
     }
+
+
 
 
     ///////////////////////////////////////////////////////////////////////////////////////
     //This method will be used to retrieve last hour job builds
-    public List<JenkinsJobBuild> getJobBuildsByTimeRange1(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws JsonProcessingException {
+    public List<JenkinsJobBuild> getJobBuildsByTimeRange1(HttpHeaders headers,LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws JsonProcessingException {
 
         String JenkinsUrl = "http://localhost:8080/";
         String url = JenkinsUrl+"job/"+ TheJobName +"/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
 
-        // Encode credentials
-        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Send the request and retrieve the response
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
 
         HttpStatusCode responseStatus = responseEntity.getStatusCode();
         String responseBody = responseEntity.getBody();
@@ -257,20 +258,22 @@ public class JenkinsService {
 
     ///////////////////////////////////////////////////////////////////////////////////////
     //This method will be used to retrieve time range job builds
-    public List<JenkinsJobBuild> getJobBuildsByTimeRange2(LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
+    public List<JenkinsJobBuild> getJobBuildsByTimeRange2(HttpHeaders headers,LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
 
         String JenkinsUrl = "http://localhost:8080/";
 
         String url = JenkinsUrl + "job/"+ TheJobName +"/api/json?pretty=true&depth=2";
 
-        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
-        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Create RestTemplate instance
         RestTemplate restTemplate = new RestTemplate();
 
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
         // Send the request and retrieve the response
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
 
         HttpStatusCode responseStatus = responseEntity.getStatusCode();
         String responseBody = responseEntity.getBody();
@@ -324,20 +327,22 @@ public class JenkinsService {
 
     ///////////////////////////////////////////////////////////////////////////////////////
     //retrieve all {JobName , buildNumber, NodeName}
-    public ResponseEntity<Object> getallJobInfo() {
+    public ResponseEntity<Object> getallJobInfo(HttpHeaders headers) {
         try {
             String JenkinsUrl = "http://localhost:8080/";
 
             String url = JenkinsUrl + "api/json?tree=jobs[name,builds[number,builtOn]]";
 
-            HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
-            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
             // Create RestTemplate instance
             RestTemplate restTemplate = new RestTemplate();
 
+
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
             // Send the request and retrieve the response
             ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
 
             HttpStatusCode responseStatus = responseEntity.getStatusCode();
             String responseBody = responseEntity.getBody();
@@ -376,15 +381,15 @@ public class JenkinsService {
 
     ///////////////////////////////////////////////////////////////////////////////////////
     //Retrieve all NodeNames in Jenkins Server
-    public List<String> getNodesNames() throws JsonProcessingException {
+    public List<String> getNodesNames(HttpHeaders headers) throws JsonProcessingException {
 
 
         String JenkinsUrl = "http://localhost:8080/";
 
         String url = JenkinsUrl+"computer/api/json";
 
-        HttpHeaders headers = getAuthHeadersJenkins("admin","admin");
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
         // Send the request and retrieve the response
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
 

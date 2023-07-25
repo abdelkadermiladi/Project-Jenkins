@@ -25,10 +25,10 @@ public class ProjectApplication {
     public void run() throws Exception {
 
       //  List<String> jobNames = jenkinsService.getAllJobNames();
-       // System.out.println("Job Names:");
-       // for (String name : jobNames) {
-       //     System.out.println(name);
-       // }
+     //   System.out.println("Job Names:");
+    //    for (String name : jobNames) {
+     //       System.out.println(name);
+      //  }
     }
 
     // Get the latest job build
