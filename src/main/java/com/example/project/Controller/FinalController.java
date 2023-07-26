@@ -47,7 +47,7 @@ public class FinalController {
                 String jobname = jobBuild.getJobName();
                 int buildnumber = jobBuild.getBuildNumber();
                 LocalDateTime date = jobBuild.getdateTime();
-                String duration = jobBuild.getjobDuration() + " millisecondes";
+                String duration = jobBuild.getjobDuration() + " milliseconds";
                 String jobStatus = jobBuild.getJobStatus();
                 Map<String, String> response = new HashMap<>();
                 response.put("jobname", jobname);

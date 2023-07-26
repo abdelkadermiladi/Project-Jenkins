@@ -3,6 +3,7 @@ import com.example.project.Model.JenkinsJobBuild;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -14,6 +15,10 @@ import java.util.*;
 
 @Service
 public class JenkinsService {
+
+    // Inject the property using @Value
+    @Value("${jenkins.url}")
+    private String jenkinsUrl;
     private final RestTemplate restTemplate;
     public JenkinsService() {
         System.out.println("start JenkinsService");
@@ -35,7 +40,7 @@ public class JenkinsService {
 
             // Perform a test request to Jenkins to check authentication
             // If the request succeeds, it means the provided credentials are valid
-            String testUrl = "http://localhost:8080/api/json";
+            String testUrl = jenkinsUrl+"api/json";
             HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
             ResponseEntity<String> responseEntity = restTemplate.exchange(testUrl, HttpMethod.GET, requestEntity, String.class);
@@ -65,9 +70,7 @@ public class JenkinsService {
     //retrieve all the job name from jenkins server
     public List<String> getAllJobNames(HttpHeaders headers) throws JsonProcessingException {
 
-        String JenkinsUrl="http://localhost:8080/";
-
-        String url = JenkinsUrl+"api/json?tree=jobs[name]";
+        String url = jenkinsUrl + "api/json?tree=jobs[name]";
 
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
@@ -136,14 +139,14 @@ public class JenkinsService {
 
     public JenkinsJobBuild getLatestJobBuild(HttpHeaders headers) throws JsonProcessingException {
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
-        String JenkinsUrl = "http://localhost:8080/";
+
 
         List<String> allJobNames = getAllJobNames(headers);
         JenkinsJobBuild latestJobBuild = null;
         LocalDateTime latestDateTime = LocalDateTime.MIN; // Initialize to the smallest possible value
 
         for (String jobName : allJobNames) {
-            String url = JenkinsUrl + "job/" + jobName + "/lastBuild/api/json";
+            String url = jenkinsUrl + "job/" + jobName + "/lastBuild/api/json";
 
             // Send the request and retrieve the response
             ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
@@ -198,8 +201,8 @@ public class JenkinsService {
     //This method will be used to retrieve last hour job builds
     public List<JenkinsJobBuild> getJobBuildsByTimeRange1(HttpHeaders headers,LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws JsonProcessingException {
 
-        String JenkinsUrl = "http://localhost:8080/";
-        String url = JenkinsUrl+"job/"+ TheJobName +"/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
+
+        String url = jenkinsUrl+"job/"+ TheJobName +"/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
 
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
@@ -260,9 +263,9 @@ public class JenkinsService {
     //This method will be used to retrieve time range job builds
     public List<JenkinsJobBuild> getJobBuildsByTimeRange2(HttpHeaders headers,LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
 
-        String JenkinsUrl = "http://localhost:8080/";
 
-        String url = JenkinsUrl + "job/"+ TheJobName +"/api/json?pretty=true&depth=2";
+
+        String url = jenkinsUrl + "job/"+ TheJobName +"/api/json?pretty=true&depth=2";
 
 
         // Create RestTemplate instance
@@ -329,9 +332,9 @@ public class JenkinsService {
     //retrieve all {JobName , buildNumber, NodeName}
     public ResponseEntity<Object> getallJobInfo(HttpHeaders headers) {
         try {
-            String JenkinsUrl = "http://localhost:8080/";
 
-            String url = JenkinsUrl + "api/json?tree=jobs[name,builds[number,builtOn]]";
+
+            String url = jenkinsUrl + "api/json?tree=jobs[name,builds[number,builtOn]]";
 
 
             // Create RestTemplate instance
@@ -384,9 +387,8 @@ public class JenkinsService {
     public List<String> getNodesNames(HttpHeaders headers) throws JsonProcessingException {
 
 
-        String JenkinsUrl = "http://localhost:8080/";
 
-        String url = JenkinsUrl+"computer/api/json";
+        String url = jenkinsUrl+"computer/api/json";
 
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
