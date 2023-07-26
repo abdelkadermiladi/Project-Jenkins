@@ -12,12 +12,12 @@ public class AuthHeaders {
     }
 
     public HttpHeaders getHeaders() {
-        System.out.println("start getHeaders");
+        //System.out.println("start getHeaders");
         return this.headers;
     }
 
     public void setHeaders(HttpHeaders headers) {
-        System.out.println("setHeaders(): HttpHeaders:"+ headers.toString());
+        //System.out.println("setHeaders(): HttpHeaders:"+ headers.toString());
         this.headers = headers;
     }
 }

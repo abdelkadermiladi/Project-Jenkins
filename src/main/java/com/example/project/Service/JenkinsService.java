@@ -16,12 +16,11 @@ import java.util.*;
 @Service
 public class JenkinsService {
 
-    // Inject the property using @Value
     @Value("${jenkins.url}")
     private String jenkinsUrl;
     private final RestTemplate restTemplate;
     public JenkinsService() {
-        System.out.println("start JenkinsService");
+        //System.out.println("start JenkinsService");
 
         this.restTemplate = new RestTemplate();
     }
@@ -174,7 +173,7 @@ public class JenkinsService {
                     // If the current build has a more recent datetime, update the latestJobBuild
                     latestDateTime = dateTime;
 
-                    // Retrieve other job information (e.g., job name, duration, status)
+                    // Retrieve other job information ( job name, duration, status)
                     String jobDuration = rootNode.get("duration").asText();
                     String jobStatus = getJobStatusFromJenkins(rootNode);
 
@@ -195,73 +194,9 @@ public class JenkinsService {
     }
 
 
-
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //This method will be used to retrieve last hour job builds
-    public List<JenkinsJobBuild> getJobBuildsByTimeRange1(HttpHeaders headers,LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws JsonProcessingException {
-
-
-        String url = jenkinsUrl+"job/"+ TheJobName +"/api/json?tree=allBuilds[id,fullDisplayName,timestamp,duration]";
-
-        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
-
-        // Send the request and retrieve the response
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
-
-
-        HttpStatusCode responseStatus = responseEntity.getStatusCode();
-        String responseBody = responseEntity.getBody();
-
-        if (responseStatus == HttpStatus.OK) {
-            // Extract the values
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-
-            List<JenkinsJobBuild> jobBuilds = new ArrayList<>();
-
-            // Iterate over the builds
-
-            for (JsonNode buildNode : rootNode.get("allBuilds")) {
-                String fullDisplayName = buildNode.get("fullDisplayName").asText();
-                // Split the string by the '#' character
-                String[] parts = fullDisplayName.split("#");
-                // Extract the JobName
-                String jobName = parts[0].trim();
-                // Extract the BuildNumber
-                int buildNumber = Integer.parseInt(parts[1].trim());
-
-                // Extract the timestamp
-                String timestampS = buildNode.get("timestamp").asText();
-                long timestampI = Long.parseLong(timestampS);
-                Instant instant = Instant.ofEpochMilli(timestampI);
-                LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-
-                String jobDuration = buildNode.get("duration").asText();
-
-                // Check if the build falls within the specified time range
-                if (dateTime.isAfter(startTime) && dateTime.isBefore(endTime)) {
-                    // create an instance of JenkinsJobBuild
-                    JenkinsJobBuild jobBuild = new JenkinsJobBuild();
-                    jobBuild.setJobName(jobName);
-                    jobBuild.setdateTime(dateTime);
-                    jobBuild.setBuildNumber(buildNumber);
-                    jobBuild.setjobDuration(jobDuration);
-                    jobBuilds.add(jobBuild);
-                }
-            }
-
-            return jobBuilds;
-
-        } else {
-            System.out.println("Request failed with status code: " + responseStatus);
-        }
-        return Collections.emptyList();
-    }
-
     ///////////////////////////////////////////////////////////////////////////////////////
     //This method will be used to retrieve time range job builds
-    public List<JenkinsJobBuild> getJobBuildsByTimeRange2(HttpHeaders headers,LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
+    public List<JenkinsJobBuild> getJobBuildsByTimeRange(HttpHeaders headers,LocalDateTime startTime, LocalDateTime endTime,String TheJobName) throws Exception {
 
 
 

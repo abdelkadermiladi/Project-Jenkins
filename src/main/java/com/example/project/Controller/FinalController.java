@@ -21,7 +21,7 @@ public class FinalController {
 
     @Autowired
     public FinalController(JenkinsService jenkinsServ) {
-        System.out.println("start FinalController()");
+        //System.out.println("start FinalController()");
 
         this.jenkinsService = jenkinsServ;
         this.authHeaders = new AuthHeaders();
@@ -31,16 +31,16 @@ public class FinalController {
     //////////////////////////////////////////////////////////////////
     @GetMapping("/last-job-build-description")
     public ResponseEntity<Object> getLastJobDescription() {
-        System.out.println("start getLastJobDescription()");
+        //System.out.println("start getLastJobDescription()");
         try {
             HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
 
             if (headers == null) {
-                System.out.println("headers null");
+                //System.out.println("headers null");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Not authenticated."));
             }
             else {
-                System.out.println("headers =" + headers.toString());
+                //System.out.println("headers =" + headers.toString());
             }
             JenkinsJobBuild jobBuild = jenkinsService.getLatestJobBuild(headers);
             if (jobBuild != null) {
@@ -59,58 +59,6 @@ public class FinalController {
                 return ResponseEntity.ok().body(response);
             } else {
                 return ResponseEntity.ok().body(Collections.singletonMap("message", "No job build found."));
-            }
-        } catch (JsonProcessingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error processing the Jenkins job build data."));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred: " + e.getMessage()));
-        }
-    }
-
-
-    //////////////////////////////////////////////////////////////////
-    @GetMapping("/job-builds-last-hour")
-    public ResponseEntity<Object> getJobBuildsLastHour() {
-        try {
-
-            HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
-            if (headers == null) {
-                System.out.println("headers null");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Not authenticated."));
-            }
-            else {
-                System.out.println("headers =" + headers.toString());
-            }
-
-            // Define the start and end time for the time range
-            LocalDateTime startTime = LocalDateTime.now().minusHours(1); // Example: 1 hours ago
-            LocalDateTime endTime = LocalDateTime.now(); // Example: current time
-
-            // Get all job names
-            List<String> jobNames = jenkinsService.getAllJobNames(headers);
-
-            List<Map<String, String>> response = new ArrayList<>();
-
-            for (String jobName : jobNames) {
-                // Get job builds within the specified time range for each job name
-                List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange1(headers,startTime, endTime, jobName);
-
-                for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
-
-                    Map<String, String> jobBuildData = new HashMap<>();
-                    jobBuildData.put("jobname", jobBuild.getJobName());
-                    jobBuildData.put("buildnumber", String.valueOf(jobBuild.getBuildNumber()));
-                    jobBuildData.put("Start date", String.valueOf(jobBuild.getdateTime()));
-                    jobBuildData.put("duration", jobBuild.getjobDuration() + " milliseconds");
-
-                    response.add(jobBuildData);
-                }
-            }
-
-            if (!response.isEmpty()) {
-                return ResponseEntity.ok().body(response);
-            } else {
-                return ResponseEntity.ok().body(Collections.singletonMap("message", "No job builds found within the specified time range."));
             }
         } catch (JsonProcessingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error processing the Jenkins job build data."));
@@ -150,11 +98,11 @@ public class FinalController {
             HttpHeaders headers = authHeaders.getHeaders(); // Retrieve the authentication headers from the session-scoped bean
 
             if (headers == null) {
-                System.out.println("headers null");
+                //System.out.println("headers null");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Not authenticated."));
             }
             else {
-                System.out.println("headers =" + headers.toString());
+                //System.out.println("headers =" + headers.toString());
             }
 
 
@@ -183,7 +131,7 @@ public class FinalController {
                 List<Map<String, String>> AllJobInfo = (List<Map<String, String>>) AllJobInfoObject;
 
                 for (String jobName : jobNames) {
-                    List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange2(headers,startTimeD, endTimeD, jobName);
+                    List<JenkinsJobBuild> jobBuildsInRange = jenkinsService.getJobBuildsByTimeRange(headers,startTimeD, endTimeD, jobName);
 
                     for (JenkinsJobBuild jobBuild : jobBuildsInRange) {
                         // The object to find
