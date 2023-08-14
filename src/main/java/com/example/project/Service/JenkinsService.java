@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
@@ -42,14 +43,14 @@ public class JenkinsService {
             // Perform a test request to Jenkins to check authentication
             // If the request succeeds, it means the provided credentials are valid
             //url encoding with UriComponentsBuilder
-            String testUrl = UriComponentsBuilder
+            UriComponents testUrl = UriComponentsBuilder
                     .fromHttpUrl(jenkinsUrl)
                     .path("api/json")
-                    .toUriString();
+                    .build();
             ;
             HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
-            ResponseEntity<String> responseEntity = restTemplate.exchange(testUrl, HttpMethod.GET, requestEntity, String.class);
+            ResponseEntity<String> responseEntity = restTemplate.exchange(testUrl.toUri(), HttpMethod.GET, requestEntity, String.class);
 
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 // Return the headers if authentication is successful
@@ -76,22 +77,29 @@ public class JenkinsService {
     //retrieve all the job name from jenkins server
     public List<String> getAllJobNames(HttpHeaders headers) throws JsonProcessingException {
 
-        String url = UriComponentsBuilder
+        UriComponents url = UriComponentsBuilder
                 .fromHttpUrl(jenkinsUrl)
                 .path("api/json")
                 .queryParam("tree", "jobs[name]")
-                .toUriString();
+                .build();
+
+        System.out.println(url);
 
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Send the request and retrieve the response
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
-
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url.toUri(), HttpMethod.GET, requestEntity, String.class);
+        System.out.println("responseEntity: "+responseEntity);
 
         HttpStatusCode responseStatus = responseEntity.getStatusCode();
-        String responseBody = responseEntity.getBody();
+
 
         if (responseStatus == HttpStatus.OK) {
+            String responseBody = responseEntity.getBody();
+
+            System.out.println("responseBody: "+responseBody);
+
+
             // Extract the job names from the response
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(responseBody);
@@ -156,17 +164,19 @@ public class JenkinsService {
         LocalDateTime latestDateTime = LocalDateTime.MIN; // Initialize to the smallest possible value
 
         for (String jobName : allJobNames) {
-            String url = UriComponentsBuilder
+            UriComponents url = UriComponentsBuilder
                     .fromHttpUrl(jenkinsUrl)
                     .pathSegment("job", jobName, "lastBuild", "api/json")
-                    .toUriString();
+                    .build();
 
             // Send the request and retrieve the response
-            ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+            ResponseEntity<String> responseEntity = restTemplate.exchange(url.toUri(), HttpMethod.GET, requestEntity, String.class);
             HttpStatusCode responseStatus = responseEntity.getStatusCode();
-            String responseBody = responseEntity.getBody();
 
             if (responseStatus == HttpStatus.OK) {
+
+                String responseBody = responseEntity.getBody();
+
                 // Extract the values
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(responseBody);
@@ -214,12 +224,12 @@ public class JenkinsService {
 
 
 
-        String url = UriComponentsBuilder
+        UriComponents url = UriComponentsBuilder
                 .fromHttpUrl(jenkinsUrl)
                 .pathSegment("job", TheJobName, "api/json")
                 .queryParam("pretty", "true")
                 .queryParam("depth", "2")
-                .toUriString();
+                .build();
 
 
         // Create RestTemplate instance
@@ -229,13 +239,14 @@ public class JenkinsService {
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Send the request and retrieve the response
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url.toUri(), HttpMethod.GET, requestEntity, String.class);
 
 
         HttpStatusCode responseStatus = responseEntity.getStatusCode();
-        String responseBody = responseEntity.getBody();
 
         if (responseStatus == HttpStatus.OK) {
+            String responseBody = responseEntity.getBody();
+
             // Extract the values
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(responseBody);
@@ -288,11 +299,11 @@ public class JenkinsService {
         try {
 
 
-            String url = UriComponentsBuilder
+            UriComponents url = UriComponentsBuilder
                     .fromHttpUrl(jenkinsUrl)
                     .path("api/json")
                     .queryParam("tree", "jobs[name,builds[number,builtOn]]")
-                    .toUriString();
+                    .build();
 
 
             // Create RestTemplate instance
@@ -302,15 +313,20 @@ public class JenkinsService {
             HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
             // Send the request and retrieve the response
-            ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+            ResponseEntity<String> responseEntity = restTemplate.exchange(url.toUri(), HttpMethod.GET, requestEntity, String.class);
 
 
             HttpStatusCode responseStatus = responseEntity.getStatusCode();
-            String responseBody = responseEntity.getBody();
 
-            List<Map<String, String>> jobInfoList = new ArrayList<>();
 
             if (responseStatus == HttpStatus.OK) {
+
+
+                String responseBody = responseEntity.getBody();
+
+                List<Map<String, String>> jobInfoList = new ArrayList<>();
+
+
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(responseBody);
                 JsonNode jobsNode = rootNode.get("jobs");
@@ -346,21 +362,22 @@ public class JenkinsService {
 
 
 
-        String url = UriComponentsBuilder
+        UriComponents url = UriComponentsBuilder
                 .fromHttpUrl(jenkinsUrl)
                 .path("computer/api/json")
-                .toUriString();
+                .build();
 
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         // Send the request and retrieve the response
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url.toUri(), HttpMethod.GET, requestEntity, String.class);
 
 
         HttpStatusCode responseStatus = responseEntity.getStatusCode();
-        String responseBody = responseEntity.getBody();
 
         if (responseStatus == HttpStatus.OK) {
+            String responseBody = responseEntity.getBody();
+
 
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(responseBody);
